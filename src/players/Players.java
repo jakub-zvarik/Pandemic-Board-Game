@@ -1,14 +1,17 @@
 package players;
 
-import java.util.Arrays;
-import java.util.List;
+import cities.City;
+import cards.Cards;
+
+import java.util.ArrayList;
 
 abstract class Players {
     private final int PLAYER_ID;
     private final String SPECIALISATION;
-    private String currentPosition;
+    private City currentCity;
     private int numberOfCards;
-    private List<String> cards;
+    private final int MAX_CARDS = 7;
+    private ArrayList<Cards> cards;
 
     // Init, getters and setters
     public Players(int playerID, String specialisation) {
@@ -24,12 +27,12 @@ abstract class Players {
         return this.SPECIALISATION;
     }
 
-    public String getCurrentPosition() {
-        return this.currentPosition;
+    public City getCurrentCity() {
+        return this.currentCity;
     }
 
-    public void setCurrentPosition(String newPosition) {
-        this.currentPosition = newPosition;
+    public void setCurrentCity(City newPosition) {
+        this.currentCity = newPosition;
     }
 
     public int getNumberOfCards() {
@@ -40,41 +43,36 @@ abstract class Players {
         this.numberOfCards = newNumberOfCards;
     }
 
-    public List<String> getCards() {
+    public ArrayList<Cards> getCards() {
         return cards;
     }
 
-    public void setCards(List<String> newCards) {
-        this.cards = newCards;
+    public void setCard(Cards newCard) {
+        if (this.numberOfCards <= this.MAX_CARDS) {
+            this.cards.add(newCard);
+            this.numberOfCards += 1;
+        } else {
+            System.out.println("You have maximum number of cards on your hand!");
+        }
     }
 
     // Basic player's actions
-    public void moveToAdjacentCity(String[] adjacentCities, String cityName) {
-        if (Arrays.asList(adjacentCities).contains(cityName)) {
-            this.setCurrentPosition(cityName);
-        } else {
-            System.out.println("City you want to go to is not adjacent to your current city!");
+    public void moveToAdjacentCity(City cityName) {
+
+    }
+
+    public void flightToCity(City cityName) {
+        for (Cards card : this.cards) {
+            if(card.getNAME().equals(cityName.getNAME())) {
+                this.setCurrentCity(cityName);
+            } else {
+                System.out.println("You do not have the needed city card for this flight.");
+            }
         }
     }
 
-    public void flightToCity(String cityName) {
-        if (this.cards.contains(cityName)) {
-            this.setCurrentPosition(cityName);
-            this.cards.remove(cityName);
-        } else {
-            System.out.println("You do not have a card with the city you want to travel to!");
-        }
+    public void charterFlightToAnyCity(City cityName) {
+
     }
-
-    public void charterFlightToAnyCity(String cityName) {
-        if (this.cards.contains(this.currentPosition)) {
-            this.setCurrentPosition(cityName);
-            this.cards.remove(cityName);
-        } else {
-            System.out.println("To use charter flight, you need to hold a card with your current city!");
-        }
-    }
-
-
-
 }
+

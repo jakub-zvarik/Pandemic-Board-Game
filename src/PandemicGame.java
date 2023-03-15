@@ -1,11 +1,12 @@
-import cities.*;
+import board.Board;
 
-import java.util.Arrays;
+
+import java.io.FileNotFoundException;
 
 public class PandemicGame {
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args) throws FileNotFoundException {
+        Board board = new Board();
+        System.out.println(board.getCITIES().get("Delhi").getAdjacentCityIndex(0).getNAME());
     }
-
 }

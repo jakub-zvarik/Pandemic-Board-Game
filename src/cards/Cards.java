@@ -1,6 +1,6 @@
 package cards;
 
-abstract class Cards {
+public abstract class Cards {
 
     private final String NAME;
 
