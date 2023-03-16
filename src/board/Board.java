@@ -1,9 +1,13 @@
 package board;
 
+import cards.Cards;
 import cities.City;
+import players.Players;
+import players.humanPlayer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -13,10 +17,18 @@ public class Board {
     private final File PATH = new File(new File(FILENAME).getAbsolutePath());
     private final HashMap<String, City> CITIES;
 
+    private final Players[] PLAYERS;
+
+    private ArrayList<Cards> playersDeck;
+    private ArrayList<Cards> epidemicsDeck;
+    private ArrayList<Cards> playersCardsOut;
+    private ArrayList<Cards> epidemicsCardsOut;
+
     // Constructor
     public Board() throws FileNotFoundException {
-        CITIES = loadCities();
+        this.CITIES = loadCities();
         loadAdjacentCities(CITIES);
+        this.PLAYERS = initialisePlayers();
     }
 
     /*
@@ -63,7 +75,31 @@ public class Board {
         }
     }
 
+    /*
+    Initialise players on the board. All players are initially in Atlanta.
+    */
+    private Players[] initialisePlayers() {
+        String INITIAL_CITY = "Atlanta";
+        humanPlayer human = new humanPlayer("Red", "Dispatcher");
+        humanPlayer anotherHuman = new humanPlayer("Blue", "Medic");
+        Players[] players = {human, anotherHuman};
+        for (Players player : players) {
+            player.setCurrentCity(this.CITIES.get(INITIAL_CITY));
+        }
+        return players;
+    }
+
+    // Here I will make method to create the card deck
+    private ArrayList<Cards> initialiseCardDeck() {
+        ArrayList<Cards> cards = new ArrayList<>();
+        return cards;
+    }
+
     public HashMap<String, City> getCITIES() {
         return CITIES;
+    }
+
+    public Players[] getPLAYERS() {
+        return PLAYERS;
     }
 }
