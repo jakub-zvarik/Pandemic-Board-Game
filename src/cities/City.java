@@ -1,7 +1,5 @@
 package cities;
 
-import cards.Cards;
-
 public class City {
     private final String NAME;
     private final String COLOR;

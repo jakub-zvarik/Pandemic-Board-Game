@@ -1,9 +1,9 @@
 package cards;
 
-public class SpecialActionCard extends Cards {
+public class SpecialActionCard extends Card {
 
-    public SpecialActionCard(String name) {
-        super(name);
+    public SpecialActionCard(String name, String color) {
+        super(name, color);
     }
 
 }

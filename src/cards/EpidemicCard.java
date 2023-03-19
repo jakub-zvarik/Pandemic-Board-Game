@@ -1,11 +1,8 @@
 package cards;
 
-import cities.City;
+public class EpidemicCard extends Card {
 
-public class EpidemicCard extends Cards {
-
-    public EpidemicCard(String name) {
-        super(name);
+    public EpidemicCard(String name, String color) {
+        super(name, color);
     }
-
 }

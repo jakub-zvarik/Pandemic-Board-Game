@@ -1,16 +1,9 @@
 package cards;
 
-public class CityCard extends Cards {
-
-    private final String COLOR;
+public class CityCard extends Card {
 
     public CityCard(String name, String color) {
-        super(name);
-        this.COLOR = color;
-    }
-
-    public String getCOLOR() {
-        return this.COLOR;
+        super(name, color);
     }
 
 }
