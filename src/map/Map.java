@@ -1,34 +1,43 @@
 package map;
 
-import cards.Card;
 import cities.City;
-import filepaths.Filepaths;
+
+import support.Filepaths;
+import support.MyHashMap;
 
 import java.io.FileNotFoundException;
 import java.util.*;
 
+/*
+Map is used to construct map of the world (game board with cities). To construct
+the map, all cities are loaded into hashmap from CSV file. Names of the cities
+are used as the keys, City objects with properties from the CSV are values.
+When the map si successfully initialised, next step performed in the Map class
+is to interconnect the City objects. That is done by adding City objects from
+the created hashmap into adjacent cities arrays, which are class variable for
+every City object.
+*/
 public class Map implements Filepaths {
 
-    private final HashMap<String, City> CITIES;
+    private final int NUMBER_OF_CITIES = 48;
+    private final MyHashMap<String, City> CITIES;
 
     // Constructor
     public Map() throws FileNotFoundException {
         // Initialise map
         this.CITIES = loadCities();
+        // Add adjacent cities
         loadAdjacentCities(CITIES);
     }
 
-    public HashMap<String, City> getCITIES() {
+    // Return HashMap object with all cities
+    public MyHashMap<String, City> getCITIES() {
         return CITIES;
     }
 
-    /*
-    This method is used to move cards around from deck to deck.
-    */
-    private void moveCards(ArrayList<Card> sourceDeck, ArrayList<Card> targetDeck, int numberOfCards) {
-        for (int card = 0; card < numberOfCards; card++) {
-            targetDeck.add(sourceDeck.get(card));
-        }
+    // Getters
+    public int getNUMBER_OF_CITIES() {
+        return NUMBER_OF_CITIES;
     }
 
     /*
@@ -37,13 +46,14 @@ public class Map implements Filepaths {
     Takes only city name and city color to create City object for every city
     These objects are saved into hashmap, with keys being names of the cities
     */
-    private HashMap<String, City> loadCities() throws FileNotFoundException {
-        HashMap<String, City> cities = new HashMap<>();
+    private MyHashMap<String, City> loadCities() throws FileNotFoundException {
+        MyHashMap<String, City> cities = new MyHashMap<>(NUMBER_OF_CITIES);
         Scanner scan = new Scanner(this.PATH);
         while (scan.hasNextLine()) {
-            String[] reading = scan.nextLine().split(",");
-            String cityName = reading[0];
-            String cityColor = reading[1];
+            String[] line = scan.nextLine().split(",");
+            // 1st and 2nd columns in the CSV are city name and city color
+            String cityName = line[0];
+            String cityColor = line[1];
             City cityObject = new City(cityName, cityColor);
             cities.put(cityName, cityObject);
         }
@@ -59,17 +69,17 @@ public class Map implements Filepaths {
     cities. Every city is associated with another City objects and these object are created only
     once.
     */
-    private void loadAdjacentCities(HashMap<String, City> loadedCities) throws FileNotFoundException {
+    private void loadAdjacentCities(MyHashMap<String, City> loadedCities) throws FileNotFoundException {
         Scanner scan = new Scanner(this.PATH);
         while (scan.hasNextLine()) {
-            String[] reading = scan.nextLine().split(",");
+            String[] line = scan.nextLine().split(",");
             // Subtract first 2 columns (city name and city color) and only get adjacent cities
-            int NUM_ADJACENT_CITIES = reading.length - 2;
+            int NUM_ADJACENT_CITIES = line.length - 2;
             City[] adjacentCities = new City[NUM_ADJACENT_CITIES];
             int indexInNewArray = 0;
-            String cityName = reading[0];
-            for (int adjacentCity = 2; adjacentCity < reading.length; adjacentCity++) {
-                adjacentCities[indexInNewArray] = loadedCities.get(reading[adjacentCity]);
+            String cityName = line[0];
+            for (int adjacentCity = 2; adjacentCity < line.length; adjacentCity++) {
+                adjacentCities[indexInNewArray] = loadedCities.get(line[adjacentCity]);
                 indexInNewArray += 1;
             }
             loadedCities.get(cityName).setAdjacentCities(adjacentCities);

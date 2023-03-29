@@ -1,14 +1,21 @@
 package carddecks;
-
+// Cards packages
 import cards.Card;
 import cards.CityCard;
-import filepaths.Filepaths;
-
+// Support package containing file path to CSV with cities and colors
+import support.Filepaths;
+// Other packages
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
 
+/*
+Abstract class laying down blue-print for Deck objects.
+Deck is an object composed of cards. There are three different deck types in the
+game - Player's deck, Disease deck and Discard piles for both decks. Decks are
+initialised mostly from CSV file containing all city names and colors.
+*/
 public abstract class Deck implements Filepaths {
 
     protected ArrayList<Card> deck = new ArrayList<>();
@@ -22,8 +29,12 @@ public abstract class Deck implements Filepaths {
         return this.deck;
     }
 
-    // NOTE - make sure about these border cases
-    // Check how many cards are left in the deck. Every turn 2 cards are drawn from the deck, 1 can be drawn too.
+    // Maybe move to player class?
+    /*
+    Method to check deck size. This decides how many cards can be drawn from the deck.
+    Edge cases are 1 or 0 cards. Normally, 2 cards are supposed to be drawn from the
+    deck every turn. Returns number of cards that can be drawn in the next turn.
+    */
     public int checkDeckSizeBeforeDraw() {
         if (this.deck.size() == 1) {
             return 1;
@@ -46,15 +57,16 @@ public abstract class Deck implements Filepaths {
         ArrayList<Card> cards = new ArrayList<>();
         Scanner scan = new Scanner(this.PATH);
         while (scan.hasNextLine()) {
-            String[] reading = scan.nextLine().split(",");
-            String cityName = reading[0];
-            String cityColor = reading[1];
+            String[] line = scan.nextLine().split(",");
+            String cityName = line[0];
+            String cityColor = line[1];
             CityCard card = new CityCard(cityName, cityColor);
             cards.add(card);
         }
         return cards;
     }
 
+    // Shuffle card deck.
     protected void shuffleDeck(ArrayList<Card> deckToShuffle) {
         Collections.shuffle(deckToShuffle);
     }
