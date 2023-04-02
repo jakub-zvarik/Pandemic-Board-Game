@@ -12,8 +12,7 @@ public class City {
     private final String COLOR;
     private City[] adjacentCities;
     private int infectionCubes = 0;
-    private boolean curedDisease = false;
-    private boolean researchCenter = false;
+    private boolean cureFound = false;
 
     // Constructor
     public City(String name, String color) {
@@ -40,18 +39,16 @@ public class City {
         return this.infectionCubes;
     }
 
-    public boolean getCuredDisease() {
-        return curedDisease;
+    public boolean getCureFound() {
+        return cureFound;
     }
-
-    public boolean getResearchCenter() {
-        return this.researchCenter;
-    }
-
 
     // Setters
     public void setAdjacentCities(City[] adjacentCities) {
         this.adjacentCities = adjacentCities;
+    }
+    public void setInfectionCubes(int numberOfCubes) {
+        this.infectionCubes = numberOfCubes;
     }
 
     public void increaseInfectionCubes() {
@@ -63,11 +60,7 @@ public class City {
     }
 
     public void setCuredDisease() {
-        this.curedDisease = true;
-    }
-
-    public void setResearchCenter(boolean newResearchCenter) {
-        this.researchCenter = newResearchCenter;
+        this.cureFound = true;
     }
 
 }

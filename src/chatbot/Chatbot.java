@@ -13,17 +13,17 @@ public class Chatbot {
 
     private final Scanner scanner = new Scanner(System.in);
 
-    // Arrays of possible inputs from users for different situations
+    // Arrays of possible inputs from users and their meanings
     private final String[] agreement = {"yes", "that's it", "positive", "agree", "true"};
     private final String[] disagreement = {"no", "false", "negative", "nope"};
-    private final String[] whatToDo = {"ask what to do", "what can i do?", "what to do?", "what to do now?", "help",
+    private final String[] whatToDo = {"ask what to do", "what can i do?", "what to do", "what to do now?", "help",
             "actions", "commands", "h"};
     private final String[] showInfected = {"show infected cities", "which cities are infected", "infected cities",
             "show infections"};
     private final String[] moveToAdjacent = {"move to adjacent city", "move to adjacent", "drive", "move", "adjacent",
             "connected", "move to connected city", "I want to go to adjacent city", "take me"};
     private final String[] fly = {"fly", "fly to city", "move to other city"};
-    private final String[] cure = {"cure", "cure disease", "delete disease cube"};
+    private final String[] cure = {"cure", "delete disease cube"};
     private final String[] findCure = {"find cure", "eradicate"};
 
     // Arrays above are added into one array of arrays. Intention is evaluated based on the index returned.
@@ -37,12 +37,10 @@ public class Chatbot {
     and sure it does not know.
     */
     public int chatTurn() {
-        int indexCounter = -1;
+        int indexCounter = 0;
         String userInput = this.scanner.nextLine();
         // Iterates through every array in the possibleQueries array
         for (String[] array : this.possibleQueries) {
-            // Counts index of currently iterated array
-            indexCounter++;
             // Iterates through every string in the array
             for (String word : array) {
                 // Sure about intention
@@ -57,6 +55,8 @@ public class Chatbot {
                     return doYouMean(indexCounter);
                 }
             }
+            // Increase to move to the next array of intentions
+            indexCounter += 1;
         }
         // Returns -1 if chatbot does not know what user wants
         return -1;

@@ -1,182 +1,242 @@
 package gameplay;
 
-// Cards packages
+// Card & Decks
+import cards.Card;
 import carddecks.DiscardPile;
 import carddecks.DiseaseDeck;
 import carddecks.PlayersDeck;
-// Map and players
-import cards.Card;
+// City & Map
 import cities.City;
 import map.Map;
+// Players
 import players.Player;
 import players.HumanPlayer;
 // Chatbot
 import chatbot.Chatbot;
 // Others
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 
+/*
+Gameplay class contains all the game rules and gameplay agent. Gameplay agent makes sure that the gameplay is
+progressing as it is supposed to, checking all the rules and edge cases. Inside the Gameplay class, all other
+objects are initialised to put together the game. Gameplay takes care of player's turns, calls Chatbot to evaluate
+player's intentions and takes care of checking for outbreaks, epidemic cards, infections, evaluating if the game
+is lost or won.
+*/
 public class Gameplay {
     // Map
     private final Map MAP = new Map();
 
-    private final Player[] PLAYERS = initialisePlayers();
+    // Players
+    private final HumanPlayer[] PLAYERS = initialisePlayers();
+    private final String PLAYERS_INITIAL_CITY = "Atlanta";
+    private final int ACTIONS_PER_TURN = 4;
 
-    // Card decks
+    // Chatbot
+    private final Chatbot CHAT = new Chatbot();
+
+    // Decks
     private final PlayersDeck PLAYERS_DECK = new PlayersDeck();
     private final DiseaseDeck DISEASES_DECK = new DiseaseDeck();
     private final DiscardPile PLAYERS_DISCARD_PILE = new DiscardPile();
     private final DiscardPile DISEASES_DISCARD_PILE = new DiscardPile();
 
-    // Things we need to keep track of
-    private int startingInfectionRate = 2;
-    private int numberOfOutbreaks = 0;
+    // Infection rates and outbreaks
+    private final int[] INFECTION_RATES = {2, 2, 3, 4};
+    private final int MAX_INFECTION_INDEX = 6;
     private final int MAX_NUMBER_OUTBREAKS = 8;
+    // Infection index points to infection rate in the infection rates array
+    private int infectionRateIndex = 0;
+    // Counting number of outbreaks for losing cases
+    private int numberOfOutbreaks = 0;
 
-    /*
-    Some cities are infected (infection cubes added)
-    Spawn players in Atlanta
-    Every player has 4 moves in 1 turn
-    Player can move around, cure diseases, use special actions (some actions cost cards)
-
-    I need something that would always check state of the game and feed it into agent, so agent could
-    do good decisions for their next play
-
-    Chatbot - how to do this I have no idea
-
-    If epidemic card - check rules
-    */
-
+    // Constructor and also the main gameplay loop
     public Gameplay() throws FileNotFoundException {
-
-        // JUST SOME DEBUGGING AND TESTING
-        Chatbot chat = new Chatbot();
-        PLAYERS[0].startingCards(PLAYERS_DECK);
-        PLAYERS[1].startingCards(PLAYERS_DECK);
-
-        // Loop for turns
-        infect();
+        // Gameplay loop
+        firstInfection();
         while (!losingCases() && !winningCase()) {
-            for (Player player : this.PLAYERS) {
-                turn((HumanPlayer) player, chat);
+            for (HumanPlayer player : this.PLAYERS) {
+                turn(player);
                 infect();
             }
         }
     }
 
-    // Public methods
-    public Player[] getPLAYERS() {
-        return PLAYERS;
-    }
-
-    public int getInfectionRate() {
-        return startingInfectionRate;
-    }
-
-    public void increaseInfectionRate() {
-        this.startingInfectionRate += 1;
-    }
-
-    public int getNumberOfOutbreaks() {
-        return numberOfOutbreaks;
-    }
-
-    public void setNumberOfOutbreaks() {
-        this.numberOfOutbreaks += 1;
-    }
-
     // Private methods
 
-    /*
-    Initialise players on the board. All players are initially in Atlanta.
-    */
-    private Player[] initialisePlayers() {
-        String INITIAL_CITY = "Atlanta";
+    // Initialise players on the board in the initial city (Atlanta by default). All players get starting cards.
+    private HumanPlayer[] initialisePlayers() {
         HumanPlayer human = new HumanPlayer("Red");
         HumanPlayer anotherHuman = new HumanPlayer("Blue");
-        Player[] players = {human, anotherHuman};
+        HumanPlayer[] players = {human, anotherHuman};
         for (Player player : players) {
-            player.setCurrentCity(this.MAP.getCITIES().get(INITIAL_CITY));
+            player.setCurrentCity(this.MAP.getCITIES().get(this.PLAYERS_INITIAL_CITY));
+            player.startingCards(this.PLAYERS_DECK);
         }
         return players;
     }
 
     /*
-    Turn for every human player. This method first announces basic information about the player,
-    shows their cards and then invoke chatbot. Chatbot returns it evaluation about what the user
-    wants, and other methods are invoked in accord with this evaluation. Every player has 4 actions
-    per turn. Some actions (mainly the informative actions without effect on game) do not take away
-    any action.
+    Turn for players. This method first announces basic information about the player,
+    shows their cards and then invoke chatbot. Chatbot returns its evaluation about what the user
+    wants, and other methods are invoked in accord to this evaluation. Every player has 4 actions
+    per turn (by default). Some actions (the informative actions without effect on game) do not take away
+    any player's action. At the end of every player's play (after all turns) the player will draw cards
+    and gameplay agent checks if there are no epidemic cards drawn.
     */
-    private void turn(HumanPlayer player, Chatbot chat) {
-        final int ACTIONS_PER_TURN = 5;
+    private void turn(HumanPlayer player) {
         int actionCounter = 1;
-        while (actionCounter < ACTIONS_PER_TURN) {
-            showCards(player);
+        while (actionCounter <= this.ACTIONS_PER_TURN) {
+            playerInformationBanner(player);
             System.out.println("What do you want to do next?");
-            System.out.println("Action: " + actionCounter + " out of 4.");
-            int verdict = chat.chatTurn();
-            if (verdict == 2) {
+            System.out.println("Action: " + actionCounter + " out of " + this.ACTIONS_PER_TURN);
+            // Chatbot, evaluation and action call
+            int CHATBOT_VERDICT = CHAT.chatTurn();
+            if (CHATBOT_VERDICT == 2) {
                 whatToDo();
-            } else if (verdict == 3) {
+            } else if (CHATBOT_VERDICT == 3) {
                 showInfectedCities();
-            } else if (verdict == 4) {
+            } else if (CHATBOT_VERDICT == 4) {
                 if (player.moveToAdjacentCity()) {
                     actionCounter += 1;
                 }
-            } else if (verdict == 5) {
+            } else if (CHATBOT_VERDICT == 5) {
                 if (player.flyToCity(this.MAP, this.PLAYERS_DISCARD_PILE)) {
                     actionCounter += 1;
                 }
-            } else if (verdict == 6) {
+            } else if (CHATBOT_VERDICT == 6) {
                 if (player.cureCity()) {
                     actionCounter += 1;
                 }
-            } else if (verdict == 7) {
+            } else if (CHATBOT_VERDICT == 7) {
                 if (player.findCure(this.PLAYERS_DISCARD_PILE)) {
-                    eradicateDisease(player);
+                    setCuredParameter(player);
                     actionCounter +=1;
                 }
             }
         }
-        player.drawCard(PLAYERS_DECK, PLAYERS_DISCARD_PILE);
+        player.drawCard(this.PLAYERS_DECK, this.PLAYERS_DISCARD_PILE);
+        epidemicCheck();
     }
 
+    // First infection in the game! In the first infection 2 cities are infected, first by 3 and second by 2 cubes.
+    private void firstInfection() {
+        int FIRST_CARD_INDEX = 0;
+        for (int diseaseCards = 0; diseaseCards < this.INFECTION_RATES[this.infectionRateIndex]; diseaseCards++) {
+            this.DISEASES_DECK.discard(FIRST_CARD_INDEX, this.DISEASES_DISCARD_PILE);
+        }
+        City FIRST_CITY = this.MAP.getCITIES().get(this.DISEASES_DISCARD_PILE.getDECK().get(1).getNAME());
+        City SECOND_CITY = this.MAP.getCITIES().get(this.DISEASES_DISCARD_PILE.getDECK().get(0).getNAME());
+        FIRST_CITY.setInfectionCubes(3);
+        SECOND_CITY.setInfectionCubes(2);
+    }
+
+
     /*
-    !!!!!!!!!!!! Check edge cases
+    Checks for epidemic card in the last drawn cards in the players discard pile, removes it and returns true,
+    otherwise false.
     */
-    private void infect() {
-        if (this.DISEASES_DECK.getDeck().size() > 0) {
-            for (int diseaseCards = 0; diseaseCards < startingInfectionRate; diseaseCards++) {
-                this.DISEASES_DECK.discard(this.DISEASES_DISCARD_PILE);
-                City city = this.MAP.getCITIES().get(this.DISEASES_DISCARD_PILE.getDeck().get(0).getNAME());
-                outbreakOrNot(city);
+    private void epidemicCheck() {
+        int CARDS_TO_CHECK = infectionRateIndex;
+        if (this.PLAYERS_DISCARD_PILE.checkDeckSizeBeforeDraw() == 1) {
+            CARDS_TO_CHECK = 1;
+        } else if (this.PLAYERS_DISCARD_PILE.checkDeckSizeBeforeDraw() == 0) {
+            CARDS_TO_CHECK = 0;
+        }
+        for (int cardIndex = 0; cardIndex < CARDS_TO_CHECK; cardIndex++) {
+            Card card = this.PLAYERS_DISCARD_PILE.getDECK().get(cardIndex);
+            if (card.getNAME().contains("EPIDEMIC")) {
+                this.PLAYERS_DISCARD_PILE.removeCard(cardIndex);
+                epidemic();
             }
         }
     }
 
-    private void outbreakOrNot(City city) {
-        final int MAX_INFECTION_CUBES = 3;
-        this.numberOfOutbreaks += 1;
-        if (city.getInfectionCubes() == MAX_INFECTION_CUBES) {
-            for (City adjacentCity : city.getAdjacentCities()) {
-                outbreakOrNot(adjacentCity);
-            }
+    /*
+    Epidemic! If epidemic card is drawn, this method performs three steps: increase the infection rate,
+    performs epidemic infection, and intensify the game.
+    */
+    private void epidemic() {
+        int FIRST_CARD_INDEX = 0;
+        // Increase the infection rate
+        if (this.infectionRateIndex < this.MAX_INFECTION_INDEX) {
+            this.infectionRateIndex += 1;
+        }
+        System.out.println("EPIDEMIC! New infection rate: " + this.INFECTION_RATES[infectionRateIndex]);
+        // Infect
+        epidemicInfect();
+        // (Intensify)
+        // Shuffle disease discard pile
+        this.DISEASES_DISCARD_PILE.shuffleDeck(this.DISEASES_DISCARD_PILE.getDECK());
+        // Place the discard pile back on top of disease deck
+        int CARDS_TO_DISCARD = this.DISEASES_DISCARD_PILE.getDECK().size();
+        for (int cards = 0; cards < CARDS_TO_DISCARD; cards ++) {
+            this.DISEASES_DISCARD_PILE.discard(FIRST_CARD_INDEX, this.DISEASES_DECK);
+        }
+    }
+
+    /*
+    Epidemic infect is special kind of infection that only occurs when EPIDEMIC card is drawn.
+    If there is 0 infection cubes in the drawn city, it will be increase it to 3. If there is more than 0
+    cubes in the city already, this method will proceed to increase it to 3 and initiate outbreak.
+    */
+    private void epidemicInfect() {
+        int TOP_CARD_INDEX = 0;
+        int LAST_CARD = this.DISEASES_DECK.getDECK().size() - 1;
+        // Array to keep track of cities with outbreak - so it won't occur in the same city multiple times in one turn.
+        ArrayList<City> citiesWithOutbreak = new ArrayList<>();
+        this.DISEASES_DECK.discard(LAST_CARD, this.DISEASES_DISCARD_PILE);
+        City city = this.MAP.getCITIES().get(this.DISEASES_DISCARD_PILE.getDECK().get(TOP_CARD_INDEX).getNAME());
+        // Decide if outbreak occurs or not
+        if (city.getInfectionCubes() > 0) {
+            city.setInfectionCubes(3);
+            outbreakOrInfection(city, citiesWithOutbreak);
         } else {
+            city.setInfectionCubes(3);
+        }
+    }
+
+    /*
+    Infection of cities when disease card with the city name is drawn from the disease deck.
+    OutbreakOrInfection method is called to decide if there is outbreak in the city or the
+    city will get classic infection. Creates ArrayList which is used to keep track of cities
+    where outbreak already occurred.
+    */
+    private void infect() {
+        int TOP_CARD_INDEX = 0;
+        ArrayList<City> citiesWithOutbreak = new ArrayList<>();
+        if (this.DISEASES_DECK.getDECK().size() > 0) {
+            for (int diseaseCards = 0; diseaseCards < this.INFECTION_RATES[this.infectionRateIndex]; diseaseCards++) {
+                this.DISEASES_DECK.discard(TOP_CARD_INDEX,this.DISEASES_DISCARD_PILE);
+                City city = this.MAP.getCITIES().get(this.DISEASES_DISCARD_PILE.getDECK().get(TOP_CARD_INDEX).getNAME());
+                outbreakOrInfection(city, citiesWithOutbreak);
+            }
+        }
+    }
+
+    /*
+    OutbreakOrInfection checks if city already has 3 infection cubes, if yes, it starts infecting adjacent cities
+    (outbreak). If city has not 3 infection cubes, the number of infection cubes is increased by 1. ArrayList taken
+    into this method as parameter keeps up which cities had already got outbreak. This way city can have only one
+    outbreak during one round.
+    */
+    private void outbreakOrInfection(City city, ArrayList<City> citiesWithOutbreak) {
+        final int MAX_INFECTION_CUBES = 3;
+        if (city.getInfectionCubes() == MAX_INFECTION_CUBES && !citiesWithOutbreak.contains(city)) {
+            System.out.println("Outbreak in " + city.getNAME() + "!");
+            citiesWithOutbreak.add(city);
+            this.numberOfOutbreaks += 1;
+            for (City adjacentCity : city.getAdjacentCities()) {
+                outbreakOrInfection(adjacentCity, citiesWithOutbreak);
+            }
+        } else if (city.getInfectionCubes() < 3 && !city.getCureFound()) {
             city.increaseInfectionCubes();
         }
     }
 
-    /*
-    Manual for player with description of possible actions.
-    */
-    private void whatToDo() {
-        System.out.println("You can do these actions:");
-        System.out.println("move to city adjacent to your current position");
-    }
 
-    /*
-    Show infected cities and how many infection cubes do they currently have.
-    */
+    // Show all infected cities and how many infection cubes do they currently have.
     private void showInfectedCities() {
         int counterOfInfected = 0;
         for (String key : this.MAP.getCITIES().keySet()) {
@@ -192,10 +252,8 @@ public class Gameplay {
         }
     }
 
-    /*
-    Eradicate disease sets city parameter "curedDisease" to true.
-    */
-    private void eradicateDisease(Player player) {
+    // Eradicate disease sets city parameter "curedDisease" to true.
+    private void setCuredParameter(Player player) {
         String color = player.getCurrentCity().getCOLOR();
         for (String key : this.MAP.getCITIES().keySet()) {
             if (this.MAP.getCITIES().get(key).getCOLOR().equals(color)) {
@@ -204,15 +262,28 @@ public class Gameplay {
         }
     }
 
+
+    // Display player's color, position and information about cure for current city color
     private void playerInformationBanner(Player player) {
         System.out.println("\n" + player.getPLAYER_ID() + " player is playing.");
-        System.out.println("Position: " + player.getCurrentCity().getNAME() + " color: " + player.getCurrentCity().getCOLOR());
+        System.out.println("Current position: " + player.getCurrentCity().getNAME() + " | Color: " +
+                player.getCurrentCity().getCOLOR() + " | Cure found: " + player.getCurrentCity().getCureFound() +
+                " | Infection cubes: " + player.getCurrentCity());
+        System.out.println("Number of outbreaks: " + this.numberOfOutbreaks);
         showCards(player);
     }
 
-    /*
-    Method to show current player's cards.
-    */
+    // Manual for player with description of possible actions.
+    private void whatToDo() {
+        System.out.println("You can do these actions:");
+        System.out.println("to show infections type: infections");
+        System.out.println("move to city adjacent to your current position - type: move and then choose city");
+        System.out.println("fly to another city type: fly and then choose city");
+        System.out.println("to cure disease (remove 1 disease cube) in your current city type: cure");
+        System.out.println("to find cure for disease type: find cure");
+    }
+
+    // Show player's cards
     private void showCards(Player player) {
         System.out.println("\n" + player.getPLAYER_ID() + " player's CARDS:");
         for (Card card : player.getCards()) {
@@ -229,11 +300,11 @@ public class Gameplay {
     private boolean winningCase() {
         int cured = 0;
         for (String key : this.MAP.getCITIES().keySet()) {
-            if (this.MAP.getCITIES().get(key).getCuredDisease()) {
+            if (this.MAP.getCITIES().get(key).getCureFound()) {
                 cured +=1;
             }
         }
-        if (cured == this.MAP.getNUMBER_OF_CITIES()) {
+        if (cured == this.MAP.getCITIES().getSize()) {
             System.out.println("You found cure for every disease! Congrats, you win!");
             return true;
         }
@@ -246,11 +317,11 @@ public class Gameplay {
     are met, the game loop will be stopped.
     */
     private boolean losingCases() {
-        if (this.PLAYERS_DECK.getDeck().isEmpty()) {
-            System.out.println("No more cards left in the player's deck. You lost!");
+        if (this.PLAYERS_DECK.getDECK().isEmpty()) {
+            System.out.println("No more cards left in the player's deck. You lost.");
             return true;
-        } else if (this.numberOfOutbreaks == this.MAX_NUMBER_OUTBREAKS) {
-            System.out.println("Number of outbreaks reached 8! You lost!");
+        } else if (this.numberOfOutbreaks >= this.MAX_NUMBER_OUTBREAKS) {
+            System.out.println("You reached maximum number of outbreaks! You lost.");
             return true;
         }
         return false;

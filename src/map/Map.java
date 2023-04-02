@@ -19,7 +19,6 @@ every City object.
 */
 public class Map implements Filepaths {
 
-    private final int NUMBER_OF_CITIES = 48;
     private final MyHashMap<String, City> CITIES;
 
     // Constructor
@@ -34,12 +33,7 @@ public class Map implements Filepaths {
     public MyHashMap<String, City> getCITIES() {
         return CITIES;
     }
-
-    // Getters
-    public int getNUMBER_OF_CITIES() {
-        return NUMBER_OF_CITIES;
-    }
-
+    
     /*
     Loading cities into hashmap
     Reads through the CSV file (structure: city name, city color, adjacent cities)
@@ -47,8 +41,8 @@ public class Map implements Filepaths {
     These objects are saved into hashmap, with keys being names of the cities
     */
     private MyHashMap<String, City> loadCities() throws FileNotFoundException {
-        MyHashMap<String, City> cities = new MyHashMap<>(NUMBER_OF_CITIES);
-        Scanner scan = new Scanner(this.PATH);
+        MyHashMap<String, City> cities = new MyHashMap<>();
+        Scanner scan = new Scanner(this.CITIES_PATH);
         while (scan.hasNextLine()) {
             String[] line = scan.nextLine().split(",");
             // 1st and 2nd columns in the CSV are city name and city color
@@ -70,7 +64,7 @@ public class Map implements Filepaths {
     once.
     */
     private void loadAdjacentCities(MyHashMap<String, City> loadedCities) throws FileNotFoundException {
-        Scanner scan = new Scanner(this.PATH);
+        Scanner scan = new Scanner(this.CITIES_PATH);
         while (scan.hasNextLine()) {
             String[] line = scan.nextLine().split(",");
             // Subtract first 2 columns (city name and city color) and only get adjacent cities

@@ -1,7 +1,6 @@
 package carddecks;
 // Cards packages
 import cards.Card;
-import cards.CityCard;
 // Support package containing file path to CSV with cities and colors
 import support.Filepaths;
 // Other packages
@@ -18,15 +17,15 @@ initialised mostly from CSV file containing all city names and colors.
 */
 public abstract class Deck implements Filepaths {
 
-    protected ArrayList<Card> deck = new ArrayList<>();
+    protected ArrayList<Card> DECK = new ArrayList<>();
 
     public Deck() {
 
     }
 
     // Public methods
-    public ArrayList<Card> getDeck() {
-        return this.deck;
+    public ArrayList<Card> getDECK() {
+        return this.DECK;
     }
 
     // Maybe move to player class?
@@ -36,13 +35,31 @@ public abstract class Deck implements Filepaths {
     deck every turn. Returns number of cards that can be drawn in the next turn.
     */
     public int checkDeckSizeBeforeDraw() {
-        if (this.deck.size() == 1) {
+        if (this.DECK.size() == 1) {
             return 1;
-        } else if (this.deck.size() == 0) {
-            System.out.println("No cards left in the deck!");
+        } else if (this.DECK.size() == 0) {
             return 0;
         }
         return 2;
+    }
+
+    // Shuffle card deck.
+    public void shuffleDeck(ArrayList<Card> deckToShuffle) {
+        Collections.shuffle(deckToShuffle);
+    }
+
+    /*
+    Discard method is used to move card from the top of the Disease deck to the discard pile.
+    This feature is crucial for the gameplay, as this is how cities are chosen for infection.
+    */
+    public void discard(int cardIndex, Deck targetPile) {
+        int TOP_CARD = 0;
+        targetPile.getDECK().add(TOP_CARD, this.DECK.get(cardIndex));
+        this.DECK.remove(cardIndex);
+    }
+
+    public void removeCard(int index) {
+        this.DECK.remove(index);
     }
 
 
@@ -55,20 +72,14 @@ public abstract class Deck implements Filepaths {
     */
     protected ArrayList<Card> initialiseCardsFromFile() throws FileNotFoundException {
         ArrayList<Card> cards = new ArrayList<>();
-        Scanner scan = new Scanner(this.PATH);
+        Scanner scan = new Scanner(this.CITIES_PATH);
         while (scan.hasNextLine()) {
             String[] line = scan.nextLine().split(",");
             String cityName = line[0];
             String cityColor = line[1];
-            CityCard card = new CityCard(cityName, cityColor);
+            Card card = new Card(cityName, cityColor);
             cards.add(card);
         }
         return cards;
     }
-
-    // Shuffle card deck.
-    protected void shuffleDeck(ArrayList<Card> deckToShuffle) {
-        Collections.shuffle(deckToShuffle);
-    }
-
 }

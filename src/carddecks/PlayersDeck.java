@@ -1,7 +1,6 @@
 package carddecks;
 // Card packages
 import cards.Card;
-import cards.EpidemicCard;
 // Others
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -15,7 +14,7 @@ public class PlayersDeck extends Deck {
 
 
     public PlayersDeck() throws FileNotFoundException {
-        this.deck = initialisePlayersDeck();
+        this.DECK = initialisePlayersDeck();
     }
 
     /*
@@ -38,10 +37,10 @@ public class PlayersDeck extends Deck {
         ArrayList<Card> pile3 = new ArrayList<>(cityCards.subList(HALF, THREE_QUARTERS));
         ArrayList<Card> pile4 = new ArrayList<>(cityCards.subList(THREE_QUARTERS, WHOLE_DECK));
         // Add Epidemic card to every pile
-        pile1.add(new EpidemicCard("EPIDEMIC", "Poison Green"));
-        pile2.add(new EpidemicCard("EPIDEMIC", "Poison Green"));
-        pile3.add(new EpidemicCard("EPIDEMIC", "Poison Green"));
-        pile4.add(new EpidemicCard("EPIDEMIC", "Poison Green"));
+        pile1.add(new Card("EPIDEMIC", "Poison Green"));
+        pile2.add(new Card("EPIDEMIC", "Poison Green"));
+        pile3.add(new Card("EPIDEMIC", "Poison Green"));
+        pile4.add(new Card("EPIDEMIC", "Poison Green"));
         // Shuffle decks
         shuffleDeck(pile1);
         shuffleDeck(pile2);
